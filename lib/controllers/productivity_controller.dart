@@ -18,7 +18,20 @@ class ProductivityController extends ChangeNotifier {
 
   // Weekly study hours (mock tracked data for charts)
   final List<double> _weeklyStudyHours = [2.5, 4.0, 3.0, 5.5, 4.5, 2.0, 6.0];
-  final List<double> _monthlyStudyHours = [52, 68, 75, 61, 80, 72, 55, 90, 65, 78, 88, 70];
+  final List<double> _monthlyStudyHours = [
+    52,
+    68,
+    75,
+    61,
+    80,
+    72,
+    55,
+    90,
+    65,
+    78,
+    88,
+    70,
+  ];
 
   ProductivityController() {
     _loadData();
@@ -26,8 +39,10 @@ class ProductivityController extends ChangeNotifier {
 
   // Getters
   List<TaskItemModel> get tasks => _tasks;
-  List<TaskItemModel> get pendingTasks => _tasks.where((t) => !t.isCompleted).toList();
-  List<TaskItemModel> get completedTasks => _tasks.where((t) => t.isCompleted).toList();
+  List<TaskItemModel> get pendingTasks =>
+      _tasks.where((t) => !t.isCompleted).toList();
+  List<TaskItemModel> get completedTasks =>
+      _tasks.where((t) => t.isCompleted).toList();
   List<HabitItemModel> get habits => _habits;
   List<GoalItemModel> get goals => _goals;
   int get pomodoroSeconds => _pomodoroSeconds;
@@ -42,8 +57,7 @@ class ProductivityController extends ChangeNotifier {
     return '$minutes:$seconds';
   }
 
-  double get pomodoroProgress =>
-      1.0 - (_pomodoroSeconds / (25 * 60));
+  double get pomodoroProgress => 1.0 - (_pomodoroSeconds / (25 * 60));
 
   int get totalTasksToday => _tasks.length;
   int get completedTasksToday => _tasks.where((t) => t.isCompleted).length;
@@ -60,29 +74,9 @@ class ProductivityController extends ChangeNotifier {
     final habitBox = HiveService.instance.habitsBox;
     final goalBox = HiveService.instance.goalsBox;
 
-    if (taskBox.isEmpty) {
-      final defaults = TaskItemModel.getDefaultTasks();
-      for (var t in defaults) { taskBox.put(t.id, t); }
-      _tasks = defaults;
-    } else {
-      _tasks = taskBox.values.toList();
-    }
-
-    if (habitBox.isEmpty) {
-      final defaults = HabitItemModel.getDefaultHabits();
-      for (var h in defaults) { habitBox.put(h.id, h); }
-      _habits = defaults;
-    } else {
-      _habits = habitBox.values.toList();
-    }
-
-    if (goalBox.isEmpty) {
-      final defaults = GoalItemModel.getDefaultGoals();
-      for (var g in defaults) { goalBox.put(g.id, g); }
-      _goals = defaults;
-    } else {
-      _goals = goalBox.values.toList();
-    }
+    _tasks = taskBox.values.toList();
+    _habits = habitBox.values.toList();
+    _goals = goalBox.values.toList();
 
     notifyListeners();
   }
@@ -124,6 +118,36 @@ class ProductivityController extends ChangeNotifier {
       streakCount: newStreak,
     );
     await HiveService.instance.habitsBox.put(updated.id, updated);
+    _loadData();
+  }
+
+  Future<void> addHabit(HabitItemModel habit) async {
+    await HiveService.instance.habitsBox.put(habit.id, habit);
+    _loadData();
+  }
+
+  Future<void> updateHabit(HabitItemModel habit) async {
+    await HiveService.instance.habitsBox.put(habit.id, habit);
+    _loadData();
+  }
+
+  Future<void> deleteHabit(String id) async {
+    await HiveService.instance.habitsBox.delete(id);
+    _loadData();
+  }
+
+  Future<void> addGoal(GoalItemModel goal) async {
+    await HiveService.instance.goalsBox.put(goal.id, goal);
+    _loadData();
+  }
+
+  Future<void> updateGoal(GoalItemModel goal) async {
+    await HiveService.instance.goalsBox.put(goal.id, goal);
+    _loadData();
+  }
+
+  Future<void> deleteGoal(String id) async {
+    await HiveService.instance.goalsBox.delete(id);
     _loadData();
   }
 

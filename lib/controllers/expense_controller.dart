@@ -17,7 +17,7 @@ class ExpenseController extends ChangeNotifier {
   DateTime get selectedMonth => _selectedMonth;
 
   double get totalBalance => totalIncome - totalExpense - totalSavings;
-  
+
   double get totalIncome => _transactions
       .where((t) => t.type == 'income')
       .fold(0, (sum, item) => sum + item.amount);
@@ -34,7 +34,9 @@ class ExpenseController extends ChangeNotifier {
     List<ExpenseItemModel> filtered = _transactions;
 
     if (_selectedFilter != 'All') {
-      filtered = filtered.where((t) => t.type.toLowerCase() == _selectedFilter.toLowerCase()).toList();
+      filtered = filtered
+          .where((t) => t.type.toLowerCase() == _selectedFilter.toLowerCase())
+          .toList();
     }
 
     // Sort by date descending
@@ -45,10 +47,11 @@ class ExpenseController extends ChangeNotifier {
   // Analytics - current month expenses grouped by category
   Map<String, double> get expensesByCategory {
     final Map<String, double> grouped = {};
-    final thisMonthExpenses = _transactions.where((t) => 
-      t.type == 'expense' && 
-      t.date.month == _selectedMonth.month && 
-      t.date.year == _selectedMonth.year
+    final thisMonthExpenses = _transactions.where(
+      (t) =>
+          t.type == 'expense' &&
+          t.date.month == _selectedMonth.month &&
+          t.date.year == _selectedMonth.year,
     );
 
     for (var exp in thisMonthExpenses) {
@@ -64,13 +67,23 @@ class ExpenseController extends ChangeNotifier {
 
     for (int i = 5; i >= 0; i--) {
       final month = DateTime(now.year, now.month - i, 1);
-      
+
       final monthIncome = _transactions
-          .where((t) => t.type == 'income' && t.date.month == month.month && t.date.year == month.year)
+          .where(
+            (t) =>
+                t.type == 'income' &&
+                t.date.month == month.month &&
+                t.date.year == month.year,
+          )
           .fold(0.0, (sum, item) => sum + item.amount);
-          
+
       final monthExpense = _transactions
-          .where((t) => t.type == 'expense' && t.date.month == month.month && t.date.year == month.year)
+          .where(
+            (t) =>
+                t.type == 'expense' &&
+                t.date.month == month.month &&
+                t.date.year == month.year,
+          )
           .fold(0.0, (sum, item) => sum + item.amount);
 
       trends.add({
@@ -83,21 +96,26 @@ class ExpenseController extends ChangeNotifier {
   }
 
   String _monthAbbreviation(int m) {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
     return months[m - 1];
   }
 
   void _loadData() {
     final box = HiveService.instance.expensesBox;
-    if (box.isEmpty) {
-      final defaults = ExpenseItemModel.getDefaultItems();
-      for (var item in defaults) {
-        box.put(item.id, item);
-      }
-      _transactions = defaults;
-    } else {
-      _transactions = box.values.toList();
-    }
+    _transactions = box.values.toList();
     notifyListeners();
   }
 

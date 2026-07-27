@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../constants/hive_box_keys.dart';
 import '../database/hive_service.dart';
 import '../models/routine_item_model.dart';
 
@@ -31,18 +32,19 @@ class RoutineController extends ChangeNotifier {
   String get selectedDay => _selectedDay;
   RoutineViewMode get viewMode => _viewMode;
   bool get showFavoritesOnly => _showFavoritesOnly;
+  List<RoutineItemModel> get allRoutines => List.unmodifiable(_allRoutines);
 
   void _loadRoutinesFromHive() {
     final box = HiveService.instance.routineItemsBox;
-    if (box.isEmpty) {
-      // Seed default master routines
-      final defaults = RoutineItemModel.getMasterSampleRoutines();
-      for (var item in defaults) {
-        box.put(item.id, item);
-      }
-      _allRoutines = defaults;
-    } else {
-      _allRoutines = box.values.toList();
+    _allRoutines = box.values.toList();
+
+    // Sync with profile if exists
+    final profileBox = HiveService.instance.userProfileBox;
+    final profile = profileBox.get(HiveBoxKeys.studentProfileKey);
+    if (profile != null) {
+      _selectedSemester = profile.semester;
+      _selectedSection = profile.section;
+      _selectedGroup = profile.group;
     }
     notifyListeners();
   }
@@ -51,21 +53,24 @@ class RoutineController extends ChangeNotifier {
   List<RoutineItemModel> get filteredRoutines {
     return _allRoutines.where((item) {
       // Auto Routine Filter logic
-      final matchesStudentProfile = item.semester == _selectedSemester &&
+      final matchesStudentProfile =
+          item.semester == _selectedSemester &&
           item.section == _selectedSection &&
           item.group == _selectedGroup;
 
       if (!matchesStudentProfile) return false;
 
       // View mode filter
-      if (_viewMode == RoutineViewMode.daily && item.dayOfWeek != _selectedDay) {
+      if (_viewMode == RoutineViewMode.daily &&
+          item.dayOfWeek != _selectedDay) {
         return false;
       }
 
       // Search
       if (_searchQuery.isNotEmpty) {
         final query = _searchQuery.toLowerCase();
-        final matchesQuery = item.subjectName.toLowerCase().contains(query) ||
+        final matchesQuery =
+            item.subjectName.toLowerCase().contains(query) ||
             item.courseCode.toLowerCase().contains(query) ||
             item.teacherName.toLowerCase().contains(query) ||
             item.roomNo.toLowerCase().contains(query);
@@ -94,11 +99,26 @@ class RoutineController extends ChangeNotifier {
     }).toList();
   }
 
-  void updateStudentProfileFilter(String semester, String section, String group) {
+  void updateStudentProfileFilter(
+    String semester,
+    String section,
+    String group,
+  ) {
     _selectedSemester = semester;
     _selectedSection = section;
     _selectedGroup = group;
     notifyListeners();
+  }
+
+  void syncWithProfile() {
+    final profileBox = HiveService.instance.userProfileBox;
+    final profile = profileBox.get(HiveBoxKeys.studentProfileKey);
+    if (profile != null) {
+      _selectedSemester = profile.semester;
+      _selectedSection = profile.section;
+      _selectedGroup = profile.group;
+      notifyListeners();
+    }
   }
 
   void setViewMode(RoutineViewMode mode) {
@@ -138,11 +158,7 @@ class RoutineController extends ChangeNotifier {
   }
 
   Future<void> importMasterRoutineSamples() async {
-    final defaults = RoutineItemModel.getMasterSampleRoutines();
-    final box = HiveService.instance.routineItemsBox;
-    for (var item in defaults) {
-      await box.put(item.id, item);
-    }
+    // No-op: app starts with a clean routine state for fresh users.
     _loadRoutinesFromHive();
   }
 }

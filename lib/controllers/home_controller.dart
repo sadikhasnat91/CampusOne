@@ -34,10 +34,27 @@ class HomeController extends ChangeNotifier {
       _stats = DashboardStatsModel.defaultStats();
       statsBox.put(HiveBoxKeys.dashboardStatsKey, _stats);
     } else {
-      _stats = existingStats;
+      _stats = _migrateSeededStats(existingStats);
+      if (_stats != existingStats) {
+        statsBox.put(HiveBoxKeys.dashboardStatsKey, _stats);
+      }
     }
 
     notifyListeners();
+  }
+
+  DashboardStatsModel _migrateSeededStats(DashboardStatsModel stats) {
+    // Legacy builds shipped fixed sample values for grade and attendance.
+    // Reset only that exact seed so users start with real, editable values.
+    final isLegacySeed =
+        stats.attendancePercentage == 92.5 &&
+        stats.cgpa == 3.84 &&
+        stats.todaysClasses == 4 &&
+        stats.todaysTasks == 6;
+
+    if (!isLegacySeed) return stats;
+
+    return stats.copyWith(attendancePercentage: 0.0, cgpa: 0.0);
   }
 
   Future<void> updateProfile({
@@ -47,7 +64,11 @@ class HomeController extends ChangeNotifier {
     required String section,
     required String group,
     required String university,
+    required String institutionType,
+    String? profilePictureUrl,
+    String? institutionLogoUrl,
   }) async {
+    final oldType = _profile.institutionType;
     _profile = _profile.copyWith(
       name: name,
       department: department,
@@ -55,6 +76,9 @@ class HomeController extends ChangeNotifier {
       section: section,
       group: group,
       university: university,
+      institutionType: institutionType,
+      profilePictureUrl: profilePictureUrl,
+      institutionLogoUrl: institutionLogoUrl,
     );
     notifyListeners();
 
@@ -62,6 +86,11 @@ class HomeController extends ChangeNotifier {
       HiveBoxKeys.studentProfileKey,
       _profile,
     );
+
+    if (oldType != institutionType) {
+      final subBox = HiveService.instance.subjectsBox;
+      await subBox.clear();
+    }
   }
 
   Future<void> togglePomodoroTimer() async {
@@ -101,6 +130,20 @@ class HomeController extends ChangeNotifier {
 
   Future<void> incrementTasks() async {
     _stats = _stats.copyWith(todaysTasks: _stats.todaysTasks + 1);
+    notifyListeners();
+    await _saveStats();
+  }
+
+  Future<void> updateAcademicSnapshot({
+    required double gradePoint,
+    required double attendancePercentage,
+  }) async {
+    _stats = _stats.copyWith(
+      cgpa: double.parse(gradePoint.toStringAsFixed(2)),
+      attendancePercentage: double.parse(
+        attendancePercentage.toStringAsFixed(1),
+      ),
+    );
     notifyListeners();
     await _saveStats();
   }

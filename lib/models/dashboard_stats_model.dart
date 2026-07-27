@@ -63,12 +63,12 @@ class DashboardStatsModel extends HiveObject {
 
   factory DashboardStatsModel.defaultStats() {
     return DashboardStatsModel(
-      todaysClasses: 4,
-      todaysTasks: 6,
-      upcomingAssignment: 'Database Systems Project (Due Tomorrow)',
-      attendancePercentage: 92.5,
-      cgpa: 3.84,
-      upcomingExam: 'Algorithms Mid-Term in 3 Days',
+      todaysClasses: 0,
+      todaysTasks: 0,
+      upcomingAssignment: '',
+      attendancePercentage: 0.0,
+      cgpa: 0.0,
+      upcomingExam: '',
       pomodoroMinutesLeft: 25,
       isPomodoroRunning: false,
     );

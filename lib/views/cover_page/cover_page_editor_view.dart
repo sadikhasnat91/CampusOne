@@ -112,9 +112,9 @@ class _CoverPageEditorViewState extends State<CoverPageEditorView> {
               onSaved: (val) => _template = _template.copyWith(title: val),
             ),
             
-            _buildSectionTitle('University Information'),
+            _buildSectionTitle('Institution Information'),
             _buildTextField(
-              label: 'University Name',
+              label: 'Institution Name (University / College / School)',
               initialValue: _template.universityName,
               onSaved: (val) => _template = _template.copyWith(universityName: val),
             ),

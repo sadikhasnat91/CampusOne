@@ -8,6 +8,7 @@ import 'controllers/cover_page_controller.dart';
 import 'controllers/expense_controller.dart';
 import 'controllers/home_controller.dart';
 import 'controllers/main_navigation_controller.dart';
+import 'controllers/notification_controller.dart';
 import 'controllers/notes_controller.dart';
 import 'controllers/productivity_controller.dart';
 import 'controllers/routine_controller.dart';
@@ -40,6 +41,7 @@ class CampusOneApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CampusController()),
         ChangeNotifierProvider(create: (_) => ExpenseController()),
         ChangeNotifierProvider(create: (_) => CoverPageController()),
+        ChangeNotifierProvider(create: (_) => NotificationController()),
       ],
       child: Consumer<ThemeManager>(
         builder: (context, themeManager, child) {

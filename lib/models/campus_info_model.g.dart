@@ -23,13 +23,16 @@ class CampusInfoModelAdapter extends TypeAdapter<CampusInfoModel> {
       type: fields[3] as String,
       date: fields[4] as DateTime,
       metadata: fields[5] as String,
+      institutionType: fields[6] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, CampusInfoModel obj) {
     writer
+      ..writeByte(7)
       ..writeByte(6)
+      ..write(obj.institutionType)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)

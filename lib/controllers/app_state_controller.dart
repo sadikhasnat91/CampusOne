@@ -3,6 +3,7 @@ import 'package:local_auth/local_auth.dart';
 import '../database/hive_service.dart';
 import '../constants/hive_box_keys.dart';
 import '../models/app_settings_model.dart';
+import '../services/notification_service.dart';
 
 class AppStateController extends ChangeNotifier {
   late AppSettingsModel _settings;
@@ -14,13 +15,15 @@ class AppStateController extends ChangeNotifier {
 
   void _loadSettings() {
     final box = HiveService.instance.appSettingsBox;
-    _settings = box.get(HiveBoxKeys.themeModeKey) ?? AppSettingsModel(
-      themeMode: 'system',
-      isFirstRun: true,
-      lastOpened: DateTime.now(),
-      isAppLockEnabled: false,
-      notificationsEnabled: true,
-    );
+    _settings =
+        box.get(HiveBoxKeys.themeModeKey) ??
+        AppSettingsModel(
+          themeMode: 'system',
+          isFirstRun: true,
+          lastOpened: DateTime.now(),
+          isAppLockEnabled: false,
+          notificationsEnabled: true,
+        );
   }
 
   bool get isFirstRun => _settings.isFirstRun;
@@ -41,6 +44,13 @@ class AppStateController extends ChangeNotifier {
   Future<void> toggleNotifications(bool value) async {
     _settings = _settings.copyWith(notificationsEnabled: value);
     await _saveSettings();
+
+    if (value) {
+      await NotificationService.instance.initNotification();
+      await NotificationService.instance.requestPermissions();
+    } else {
+      await NotificationService.instance.cancelAllNotifications();
+    }
   }
 
   Future<void> _saveSettings() async {
@@ -59,7 +69,8 @@ class AppStateController extends ChangeNotifier {
     final LocalAuthentication auth = LocalAuthentication();
     try {
       final bool canAuthenticateWithBiometrics = await auth.canCheckBiometrics;
-      final bool canAuthenticate = canAuthenticateWithBiometrics || await auth.isDeviceSupported();
+      final bool canAuthenticate =
+          canAuthenticateWithBiometrics || await auth.isDeviceSupported();
 
       if (!canAuthenticate) {
         _isAuthenticated = true; // Fallback if no hardware is present

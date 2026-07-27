@@ -1,10 +1,11 @@
 class AppStrings {
   static const String appName = 'CampusOne';
   static const String appTagline = 'Smart Campus Hub';
-  
+
   // Navigation Tabs
   static const String navHome = 'Home';
   static const String navStudy = 'Study';
+  static const String navCampus = 'Campus';
   static const String navPlanner = 'Planner';
   static const String navNotes = 'Notes';
   static const String navProfile = 'Profile';

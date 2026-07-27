@@ -26,23 +26,24 @@ class NotesController extends ChangeNotifier {
   List<NoteModel> get filteredNotes {
     return _notes.where((note) {
       if (_showFavoritesOnly && !note.isFavorite) return false;
-      if (_selectedFolderId != null && note.folderId != _selectedFolderId) return false;
-      if (_selectedTag != null && !note.tags.contains(_selectedTag)) return false;
+      if (_selectedFolderId != null && note.folderId != _selectedFolderId)
+        return false;
+      if (_selectedTag != null && !note.tags.contains(_selectedTag))
+        return false;
       if (_searchQuery.isNotEmpty) {
         final q = _searchQuery.toLowerCase();
         return note.title.toLowerCase().contains(q) ||
             note.tags.any((t) => t.toLowerCase().contains(q));
       }
       return true;
-    }).toList()
-      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+    }).toList()..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
   }
 
-  List<NoteModel> get recentNotes => _notes
-      .toList()
-      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+  List<NoteModel> get recentNotes =>
+      _notes.toList()..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
 
-  List<NoteModel> get favoriteNotes => _notes.where((n) => n.isFavorite).toList();
+  List<NoteModel> get favoriteNotes =>
+      _notes.where((n) => n.isFavorite).toList();
 
   List<String> get allTags {
     final tagSet = <String>{};
@@ -64,25 +65,8 @@ class NotesController extends ChangeNotifier {
     final noteBox = HiveService.instance.notesBox;
     final folderBox = HiveService.instance.foldersBox;
 
-    if (folderBox.isEmpty) {
-      final defaults = NoteFolderModel.getDefaultFolders();
-      for (var f in defaults) {
-        folderBox.put(f.id, f);
-      }
-      _folders = defaults;
-    } else {
-      _folders = folderBox.values.toList();
-    }
-
-    if (noteBox.isEmpty) {
-      final defaults = NoteModel.getDefaultNotes();
-      for (var n in defaults) {
-        noteBox.put(n.id, n);
-      }
-      _notes = defaults;
-    } else {
-      _notes = noteBox.values.toList();
-    }
+    _folders = folderBox.values.toList();
+    _notes = noteBox.values.toList();
 
     notifyListeners();
   }

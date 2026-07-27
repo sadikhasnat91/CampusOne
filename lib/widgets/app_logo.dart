@@ -1,19 +1,29 @@
 import 'package:flutter/material.dart';
+import '../utils/responsive.dart';
 
+/// Responsive app logo widget that scales its size based on device width.
 class AppLogo extends StatelessWidget {
-  final double size;
   final bool showText;
   final TextStyle? textStyle;
+  final double? size;
 
   const AppLogo({
     super.key,
-    this.size = 80.0,
     this.showText = false,
     this.textStyle,
+    this.size,
   });
+
+  double _logoSize(BuildContext context) {
+    if (size != null) return size!;
+    if (Responsive.isDesktop(context)) return 180.0;
+    if (Responsive.isTablet(context)) return 120.0;
+    return 80.0;
+  }
 
   @override
   Widget build(BuildContext context) {
+    final size = _logoSize(context);
     final theme = Theme.of(context);
     final primaryColor = theme.colorScheme.primary;
     final secondaryColor = theme.colorScheme.tertiary;
@@ -30,7 +40,7 @@ class AppLogo extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: primaryColor.withValues(alpha: 0.3),
+            color: primaryColor.withOpacity(0.3),
             blurRadius: size * 0.25,
             spreadRadius: 2,
             offset: const Offset(0, 4),

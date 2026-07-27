@@ -24,13 +24,15 @@ class StudentProfileModelAdapter extends TypeAdapter<StudentProfileModel> {
       group: fields[4] as String,
       university: fields[5] as String,
       profilePictureUrl: fields[6] as String,
+      institutionType: fields[7] == null ? 'university' : fields[7] as String,
+      institutionLogoUrl: fields[8] == null ? '' : fields[8] as String,
     );
   }
 
   @override
   void write(BinaryWriter writer, StudentProfileModel obj) {
     writer
-      ..writeByte(7)
+      ..writeByte(9)
       ..writeByte(0)
       ..write(obj.name)
       ..writeByte(1)
@@ -44,7 +46,11 @@ class StudentProfileModelAdapter extends TypeAdapter<StudentProfileModel> {
       ..writeByte(5)
       ..write(obj.university)
       ..writeByte(6)
-      ..write(obj.profilePictureUrl);
+      ..write(obj.profilePictureUrl)
+      ..writeByte(7)
+      ..write(obj.institutionType)
+      ..writeByte(8)
+      ..write(obj.institutionLogoUrl);
   }
 
   @override

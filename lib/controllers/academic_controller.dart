@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import '../constants/hive_box_keys.dart';
 import '../database/hive_service.dart';
 import '../models/academic_event_model.dart';
 import '../models/course_material_model.dart';
@@ -26,35 +27,15 @@ class AcademicController extends ChangeNotifier {
     final matBox = HiveService.instance.courseMaterialsBox;
     final evtBox = HiveService.instance.academicEventsBox;
 
-    if (subBox.isEmpty) {
-      final defaults = SubjectModel.getDefaultSubjects();
-      for (var s in defaults) {
-        subBox.put(s.id, s);
-      }
-      _subjects = defaults;
-    } else {
-      _subjects = subBox.values.toList();
+    final profileBox = HiveService.instance.userProfileBox;
+    final profile = profileBox.get(HiveBoxKeys.studentProfileKey);
+    if (profile != null) {
+      _selectedSemester = profile.semester;
     }
 
-    if (matBox.isEmpty) {
-      final defaults = CourseMaterialModel.getDefaultMaterials();
-      for (var m in defaults) {
-        matBox.put(m.id, m);
-      }
-      _materials = defaults;
-    } else {
-      _materials = matBox.values.toList();
-    }
-
-    if (evtBox.isEmpty) {
-      final defaults = AcademicEventModel.getDefaultEvents();
-      for (var e in defaults) {
-        evtBox.put(e.id, e);
-      }
-      _events = defaults;
-    } else {
-      _events = evtBox.values.toList();
-    }
+    _subjects = subBox.values.toList();
+    _materials = matBox.values.toList();
+    _events = evtBox.values.toList();
 
     notifyListeners();
   }
@@ -64,16 +45,71 @@ class AcademicController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void syncWithProfile() {
+    final profileBox = HiveService.instance.userProfileBox;
+    final profile = profileBox.get(HiveBoxKeys.studentProfileKey);
+    if (profile != null) {
+      _selectedSemester = profile.semester;
+      _loadAcademicData();
+    }
+  }
+
+  Future<void> changeInstitutionType(String instType) async {
+    final subBox = HiveService.instance.subjectsBox;
+    await subBox.clear();
+    _loadAcademicData();
+  }
+
+  /// Overall CGPA/GPA across ALL semesters (cumulative)
   double calculateOverallCgpa() {
     if (_subjects.isEmpty) return 0.0;
     double totalPoints = 0;
     double totalCredits = 0;
+    bool hasCredits = false;
+
     for (var sub in _subjects) {
-      totalPoints += (sub.gradePoint * sub.credits);
-      totalCredits += sub.credits;
+      if (sub.credits > 0) {
+        hasCredits = true;
+        totalPoints += (sub.gradePoint * sub.credits);
+        totalCredits += sub.credits;
+      } else {
+        totalPoints += sub.gradePoint;
+      }
     }
-    if (totalCredits == 0) return 0.0;
-    return double.parse((totalPoints / totalCredits).toStringAsFixed(2));
+
+    if (hasCredits) {
+      if (totalCredits == 0) return 0.0;
+      return double.parse((totalPoints / totalCredits).toStringAsFixed(2));
+    } else {
+      if (_subjects.isEmpty) return 0.0;
+      return double.parse((totalPoints / _subjects.length).toStringAsFixed(2));
+    }
+  }
+
+  /// GPA for the currently selected semester only
+  double calculateCurrentSemesterGpa() {
+    final current = subjects; // filtered by _selectedSemester
+    if (current.isEmpty) return 0.0;
+    double totalPoints = 0;
+    double totalCredits = 0;
+    bool hasCredits = false;
+
+    for (var sub in current) {
+      if (sub.credits > 0) {
+        hasCredits = true;
+        totalPoints += (sub.gradePoint * sub.credits);
+        totalCredits += sub.credits;
+      } else {
+        totalPoints += sub.gradePoint;
+      }
+    }
+
+    if (hasCredits) {
+      if (totalCredits == 0) return 0.0;
+      return double.parse((totalPoints / totalCredits).toStringAsFixed(2));
+    } else {
+      return double.parse((totalPoints / current.length).toStringAsFixed(2));
+    }
   }
 
   double calculateExpectedCgpa(double targetPointsForNewSubjects) {
@@ -89,7 +125,11 @@ class AcademicController extends ChangeNotifier {
     return double.parse((totalPoints / totalCredits).toStringAsFixed(2));
   }
 
-  Future<void> updateAttendance(String subjectId, int attended, int total) async {
+  Future<void> updateAttendance(
+    String subjectId,
+    int attended,
+    int total,
+  ) async {
     final idx = _subjects.indexWhere((s) => s.id == subjectId);
     if (idx != -1) {
       final updated = _subjects[idx].copyWith(
@@ -106,13 +146,43 @@ class AcademicController extends ChangeNotifier {
     _loadAcademicData();
   }
 
+  Future<void> updateSubject(SubjectModel subject) async {
+    await HiveService.instance.subjectsBox.put(subject.id, subject);
+    _loadAcademicData();
+  }
+
+  Future<void> deleteSubject(String id) async {
+    await HiveService.instance.subjectsBox.delete(id);
+    _loadAcademicData();
+  }
+
   Future<void> addMaterial(CourseMaterialModel material) async {
     await HiveService.instance.courseMaterialsBox.put(material.id, material);
     _loadAcademicData();
   }
 
+  Future<void> updateMaterial(CourseMaterialModel material) async {
+    await HiveService.instance.courseMaterialsBox.put(material.id, material);
+    _loadAcademicData();
+  }
+
+  Future<void> deleteMaterial(String id) async {
+    await HiveService.instance.courseMaterialsBox.delete(id);
+    _loadAcademicData();
+  }
+
   Future<void> addAcademicEvent(AcademicEventModel event) async {
     await HiveService.instance.academicEventsBox.put(event.id, event);
+    _loadAcademicData();
+  }
+
+  Future<void> updateAcademicEvent(AcademicEventModel event) async {
+    await HiveService.instance.academicEventsBox.put(event.id, event);
+    _loadAcademicData();
+  }
+
+  Future<void> deleteAcademicEvent(String id) async {
+    await HiveService.instance.academicEventsBox.delete(id);
     _loadAcademicData();
   }
 
